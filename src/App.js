@@ -10,6 +10,13 @@ import Home from "./Home";
 const App = function AppWrapper() {
   const { address, destroy, connect, performActions } = useContractKit();
   const { balance } = useBalance();
+  const handleConnect = () => {
+    connect().then(async () => {
+      if (!address) {
+        await connect();
+      }
+    });
+  };
   const contract = useContract();
 
   return (
@@ -29,7 +36,7 @@ const App = function AppWrapper() {
           <Main contract={contract} performActions={performActions} />
         </Container>
       ) : (
-        <Home connect={connect} />
+        <Home connect={handleConnect} />
       )}
     </>
   );
