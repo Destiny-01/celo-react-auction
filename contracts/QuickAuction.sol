@@ -2,11 +2,8 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract QuickAuction is ERC721URIStorage {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
     uint256 private auctionsCount;
 
     constructor() ERC721("AuctionNFT", "AUC") {}
@@ -15,12 +12,11 @@ contract QuickAuction is ERC721URIStorage {
         uint256 id;
         string title;
         string description;
-        uint256 tokenId;
         address owner;
         uint256 startPrice;
         uint256 highestBid;
         address highestBidder;
-        address[] buyers;
+        address[] bidders;
         uint256 endTime;
         bool isActive;
         bool ownerTaken;
@@ -53,8 +49,7 @@ contract QuickAuction is ERC721URIStorage {
         uint256 _startPrice,
         uint256 _endTime
     ) external {
-        uint256 newItemId = _tokenIds.current();
-        _tokenIds.increment();
+        uint256 newItemId = auctionsCount;
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, tokenURI);
         uint256 id = auctionsCount;
@@ -62,7 +57,6 @@ contract QuickAuction is ERC721URIStorage {
         auctions[id].id = id;
         auctions[id].title = _title;
         auctions[id].description = _description;
-        auctions[id].tokenId = newItemId;
         auctions[id].startPrice = _startPrice;
         auctions[id].endTime = block.timestamp + _endTime;
         auctions[id].owner = msg.sender;
@@ -92,7 +86,7 @@ contract QuickAuction is ERC721URIStorage {
 
         auctions[_id].highestBidder = msg.sender;
         if (bids[msg.sender][_id] == 0) {
-            auctions[_id].buyers.push(msg.sender);
+            auctions[_id].bidders.push(msg.sender);
         }
         bids[msg.sender][_id] = currentBid;
 
@@ -105,13 +99,13 @@ contract QuickAuction is ERC721URIStorage {
 
         if (auctions[_id].owner == msg.sender && !auctions[_id].ownerTaken) {
             if (auctions[_id].highestBidder == address(0)) {
-                _transfer(address(this), msg.sender, auctions[_id].tokenId);
+                _transfer(address(this), msg.sender, auctions[_id].id);
             } else {
                 payable(auctions[_id].owner).transfer(auctions[_id].highestBid);
             }
             auctions[_id].ownerTaken = true;
         } else if (auctions[_id].highestBidder == msg.sender) {
-            _transfer(address(this), auctions[_id].highestBidder, auctions[_id].tokenId);
+            _transfer(address(this), auctions[_id].highestBidder, auctions[_id].id);
         } else {
             require(bids[msg.sender][_id] != 0, "Did you participate???");
             payable(msg.sender).transfer(bids[msg.sender][_id]);
@@ -147,8 +141,8 @@ contract QuickAuction is ERC721URIStorage {
             if (auctions[i].owner == msg.sender) {
                 allAuctions[i] = auctions[i];
             }
-            for (uint256 j = 0; j < auctions[i].buyers.length; ++j) {
-                if (auctions[i].buyers[j] == msg.sender) {
+            for (uint256 j = 0; j < auctions[i].bidders.length; ++j) {
+                if (auctions[i].bidders[j] == msg.sender) {
                     allAuctions[i] = auctions[i];
                 }
             }
